@@ -1,0 +1,8 @@
+{
+  "name": "workflow",
+  "description": "Multi-agent workflow orchestration for feature development, bug fixing, and CI management",
+  "version": "1.0.0",
+  "author": {
+    "name": "Paul Milesi"
+  }
+}
