@@ -1,5 +1,8 @@
 ---
+name: feature-plan
 description: Plan a new feature with architecture design and Linear ticket creation
+disable-model-invocation: true
+argument-hint: "[feature description]"
 ---
 
 # Feature Planning

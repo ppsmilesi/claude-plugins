@@ -1,5 +1,7 @@
 ---
+name: ci-status
 description: Check CI status for all open PRs
+disable-model-invocation: true
 ---
 
 # CI Status Check

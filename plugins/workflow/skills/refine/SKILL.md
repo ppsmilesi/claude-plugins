@@ -1,5 +1,8 @@
 ---
+name: refine
 description: Refine a vague idea into a well-structured prompt for use with other workflow commands
+disable-model-invocation: true
+argument-hint: "[rough idea or feature request]"
 ---
 
 # Prompt Refinement

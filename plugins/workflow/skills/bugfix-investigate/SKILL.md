@@ -1,5 +1,8 @@
 ---
+name: bugfix-investigate
 description: Investigate a bug from Linear ticket with Sentry analysis
+disable-model-invocation: true
+argument-hint: "[Linear ticket ID]"
 ---
 
 # Bug Investigation

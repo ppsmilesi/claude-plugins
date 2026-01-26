@@ -1,5 +1,8 @@
 ---
+name: ci-fix
 description: Auto-fix failing CI tests on PRs
+disable-model-invocation: true
+argument-hint: "[PR number]"
 ---
 
 # CI Auto-Fix
@@ -79,7 +82,7 @@ python plugins/workflow/tools/git.py commit --message "fix: resolve CI failure -
 python plugins/workflow/tools/git.py push "<branch_name>"
 ```
 
-#### 2.6 Cleanup Worktree (Optional)
+#### 2.6 Cleanup Worktree
 
 After the fix is pushed:
 ```bash

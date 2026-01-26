@@ -1,5 +1,8 @@
 ---
+name: bugfix-fix
 description: Implement bug fix from investigated Linear ticket
+disable-model-invocation: true
+argument-hint: "[Linear ticket ID]"
 ---
 
 # Bug Fix Implementation

@@ -1,5 +1,8 @@
 ---
+name: feature-implement
 description: Implement a feature from a Linear project
+disable-model-invocation: true
+argument-hint: "[project ID]"
 ---
 
 # Feature Implementation
