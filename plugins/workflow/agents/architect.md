@@ -35,6 +35,13 @@ Create discrete, implementable tasks that:
 - Follow a logical dependency order
 - Are testable independently
 
+### 4. Assign Dependency Tiers
+Group tasks into numbered tiers for parallel execution:
+- **Tier 0**: No dependencies — can start immediately
+- **Tier N**: Depends only on tasks from tiers < N
+- Tasks within the same tier are independent and can run in parallel
+- Minimize the number of tiers to maximize parallelism
+
 ---
 
 ## Output Format
@@ -77,9 +84,24 @@ A JSON array of tasks. Each task becomes a Linear ticket:
 [
   {
     "title": "Short, action-oriented title",
+    "tier": 0,
     "description": "## Summary\n<What this task accomplishes>\n\n## Acceptance Criteria\n- [ ] <Testable criterion 1>\n- [ ] <Testable criterion 2>\n\n## Implementation\n\n### Files to Create\n- `path/to/new/file.ts` - <purpose>\n\n### Files to Modify\n- `path/to/existing/file.ts` - <what to change>\n\n### Patterns to Follow\nSee `path/to/reference.ts` for <pattern name>\n\n### Notes\n<Any gotchas or hints>",
-    "dependencies": ["Title of task this depends on"],
+    "dependencies": [],
     "labels": ["backend", "api"]
+  },
+  {
+    "title": "Another independent task",
+    "tier": 0,
+    "description": "...",
+    "dependencies": [],
+    "labels": ["backend"]
+  },
+  {
+    "title": "Task depending on tier 0",
+    "tier": 1,
+    "description": "...",
+    "dependencies": ["Short, action-oriented title", "Another independent task"],
+    "labels": ["frontend"]
   }
 ]
 ```
@@ -109,6 +131,9 @@ Each task description MUST include:
 ### Patterns to Follow
 Reference `path/to/similar/file.ts` for:
 - <specific pattern to copy>
+
+### Tier
+<tier number> — <brief justification for tier placement>
 
 ### Dependencies
 - Requires: <other task title> (if any)

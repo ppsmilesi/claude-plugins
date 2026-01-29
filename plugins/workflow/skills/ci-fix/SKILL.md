@@ -21,19 +21,21 @@ This prevents disrupting the user's working state and allows parallel work on mu
 
 ### 1. Get Failing PRs
 ```bash
-python plugins/workflow/tools/github.py all-prs-status
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py all-prs-status
 ```
 Filter for PRs with `ci_status: "failing"`
 
-### 2. For Each Failing PR
+### 2. For All Failing PRs (Parallel)
+
+Launch sub-agents **in parallel** — one Task tool call per failing PR in a single message. Each agent gets its own worktree via `checkout-worktree` and independently performs steps 2.1–2.6 below.
 
 #### 2.1 Get Failure Details
 ```bash
 # Get the branch name
-python plugins/workflow/tools/github.py pr-branch <pr_number> --repo <owner/repo>
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py pr-branch <pr_number> --repo <owner/repo>
 
 # Get detailed failure logs
-python plugins/workflow/tools/github.py ci-logs <pr_number> --repo <owner/repo>
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py ci-logs <pr_number> --repo <owner/repo>
 ```
 
 #### 2.2 Create Worktree for the Existing Branch
@@ -45,7 +47,7 @@ python plugins/workflow/tools/github.py ci-logs <pr_number> --repo <owner/repo>
 cd <repo_path>
 
 # Create worktree for the existing branch
-python plugins/workflow/tools/git.py checkout-worktree "<branch_name>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py checkout-worktree "<branch_name>"
 ```
 
 This will:
@@ -76,31 +78,31 @@ Use the **tester** agent to run the failing tests locally if possible.
 From the worktree directory:
 ```bash
 # Commit the fix
-python plugins/workflow/tools/git.py commit --message "fix: resolve CI failure - <description>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py commit --message "fix: resolve CI failure - <description>"
 
 # Push to the PR branch
-python plugins/workflow/tools/git.py push "<branch_name>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py push "<branch_name>"
 ```
 
 #### 2.6 Cleanup Worktree
 
 After the fix is pushed:
 ```bash
-python plugins/workflow/tools/git.py remove-worktree "<worktree_path>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py remove-worktree "<worktree_path>"
 ```
 
 ### 3. Monitor
 
 After pushing, check if CI passes:
 ```bash
-python plugins/workflow/tools/github.py pr-checks <pr_number> --repo <owner/repo>
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py pr-checks <pr_number> --repo <owner/repo>
 ```
 
 ---
 
 ## Tool Reference
 
-### Git (`plugins/workflow/tools/git.py`)
+### Git (`~/.claude/plugins/cache/*/workflow/*/tools/git.py`)
 
 | Command | Description |
 |---------|-------------|
@@ -111,7 +113,7 @@ python plugins/workflow/tools/github.py pr-checks <pr_number> --repo <owner/repo
 | `commit --message MSG` | Stage and commit all changes |
 | `push <branch>` | Push branch to remote |
 
-### GitHub (`plugins/workflow/tools/github.py`)
+### GitHub (`~/.claude/plugins/cache/*/workflow/*/tools/github.py`)
 
 | Command | Description |
 |---------|-------------|
@@ -127,18 +129,18 @@ python plugins/workflow/tools/github.py pr-checks <pr_number> --repo <owner/repo
 
 ```bash
 # 1. Find failing PRs
-python plugins/workflow/tools/github.py all-prs-status
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py all-prs-status
 
 # 2. Get branch name for PR #123 in ouihelp/api
-python plugins/workflow/tools/github.py pr-branch 123 --repo ouihelp/api
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py pr-branch 123 --repo ouihelp/api
 # Output: my-feature-branch
 
 # 3. Get failure logs
-python plugins/workflow/tools/github.py ci-logs 123 --repo ouihelp/api
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py ci-logs 123 --repo ouihelp/api
 
 # 4. Create worktree (from the repo directory)
 cd ~/Repos/api
-python plugins/workflow/tools/git.py checkout-worktree "my-feature-branch"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py checkout-worktree "my-feature-branch"
 # Output: {"path": "/Users/.../worktrees/api/ci-fix-my-feature-branch", "branch": "my-feature-branch"}
 
 # 5. Work in worktree
@@ -146,9 +148,9 @@ cd /Users/.../worktrees/api/ci-fix-my-feature-branch
 # ... make fixes ...
 
 # 6. Commit and push
-python plugins/workflow/tools/git.py commit --message "fix: resolve type error in handler"
-python plugins/workflow/tools/git.py push "my-feature-branch"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py commit --message "fix: resolve type error in handler"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py push "my-feature-branch"
 
 # 7. Check CI status
-python plugins/workflow/tools/github.py pr-checks 123 --repo ouihelp/api
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py pr-checks 123 --repo ouihelp/api
 ```

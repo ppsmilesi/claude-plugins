@@ -9,6 +9,7 @@ Commands:
     create-ticket --team TEAM --title TITLE [--description DESC] [--project ID] [--state STATE]
     update-status <ticket_id> --status STATUS
     add-comment <ticket_id> --body BODY
+    block-ticket <ticket_id> --blocked-by <blocker_ticket_id>
     get-project <project_id>        Get project details
     get-project-tickets <project_id> List tickets in a project
     create-project --team TEAM --name NAME [--description DESC]
@@ -229,6 +230,18 @@ mutation CreateComment($input: CommentCreateInput!) {
 }
 """
 
+CREATE_RELATION_MUTATION = """
+mutation CreateRelation($input: IssueRelationCreateInput!) {
+    issueRelationCreate(input: $input) {
+        success
+        issueRelation {
+            id
+            type
+        }
+    }
+}
+"""
+
 GET_WORKFLOW_STATES_QUERY = """
 query GetWorkflowStates($teamId: String!) {
     team(id: $teamId) {
@@ -416,6 +429,44 @@ async def add_comment(
         return False
 
 
+async def block_ticket(
+    ticket_id: str,
+    blocked_by_id: str,
+) -> bool:
+    """Set a blocking relation: ticket_id is blocked by blocked_by_id."""
+    ticket = await get_ticket(ticket_id)
+    blocker = await get_ticket(blocked_by_id)
+    if not ticket or not ticket.id or not blocker or not blocker.id:
+        print(f"Could not find one or both tickets: {ticket_id}, {blocked_by_id}", file=sys.stderr)
+        return False
+
+    try:
+        data = await _execute_query(
+            CREATE_RELATION_MUTATION,
+            {
+                "input": {
+                    "issueId": blocker.id,
+                    "relatedIssueId": ticket.id,
+                    "type": "blocks",
+                }
+            },
+        )
+        result = data.get("issueRelationCreate", {})
+
+        if result.get("success"):
+            print(
+                f"  {blocked_by_id} now blocks {ticket_id}",
+                file=sys.stderr,
+            )
+            return True
+        else:
+            print(f"Could not create blocking relation", file=sys.stderr)
+            return False
+    except LinearAPIError as e:
+        print(f"Error creating relation: {e}", file=sys.stderr)
+        return False
+
+
 async def get_ticket(ticket_id: str) -> LinearTicket | None:
     """Get a Linear ticket by ID or identifier."""
     try:
@@ -585,6 +636,22 @@ async def cmd_get_project_tickets(args):
     print(json.dumps([to_dict(t) for t in tickets], indent=2))
 
 
+async def cmd_block_ticket(args):
+    success = await block_ticket(args.ticket_id, args.blocked_by)
+    if success:
+        print(
+            json.dumps(
+                {
+                    "success": True,
+                    "ticket_id": args.ticket_id,
+                    "blocked_by": args.blocked_by,
+                }
+            )
+        )
+    else:
+        sys.exit(1)
+
+
 async def cmd_create_project(args):
     project = await create_project(
         name=args.name,
@@ -625,6 +692,10 @@ def main():
     p = subparsers.add_parser("get-project-tickets", help="List project tickets")
     p.add_argument("project_id", help="Project ID or name")
 
+    p = subparsers.add_parser("block-ticket", help="Set blocking relation between tickets")
+    p.add_argument("ticket_id", help="Ticket ID that is blocked")
+    p.add_argument("--blocked-by", required=True, help="Ticket ID that blocks it")
+
     p = subparsers.add_parser("create-project", help="Create a new project")
     p.add_argument("--team", required=True, help="Team key")
     p.add_argument("--name", required=True, help="Project name")
@@ -640,6 +711,8 @@ def main():
         asyncio.run(cmd_update_status(args))
     elif args.command == "add-comment":
         asyncio.run(cmd_add_comment(args))
+    elif args.command == "block-ticket":
+        asyncio.run(cmd_block_ticket(args))
     elif args.command == "get-project":
         asyncio.run(cmd_get_project(args))
     elif args.command == "get-project-tickets":

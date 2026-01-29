@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 ### 1. Get All Open PRs with Status
 ```bash
-python plugins/workflow/tools/github.py all-prs-status
+python ~/.claude/plugins/cache/*/workflow/*/tools/github.py all-prs-status
 ```
 
 This returns a JSON array with each PR's:
@@ -26,12 +26,12 @@ Present a table showing:
 
 ### 3. For Failing PRs
 Offer to:
-- Get detailed CI logs: `python plugins/workflow/tools/github.py ci-logs <pr_number>`
+- Get detailed CI logs: `python ~/.claude/plugins/cache/*/workflow/*/tools/github.py ci-logs <pr_number>`
 - Auto-fix with `/workflow:ci-fix`
 
 ## Tool Reference
 
-### GitHub (`plugins/workflow/tools/github.py`)
+### GitHub (`~/.claude/plugins/cache/*/workflow/*/tools/github.py`)
 - `my-prs [--repo REPO]` - List my open PRs
 - `all-prs-status [--repo REPO]` - Get all PRs with CI status
 - `pr-checks <pr_number> [--repo REPO]` - Get checks for specific PR

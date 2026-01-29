@@ -21,14 +21,14 @@ This prevents disrupting the user's working state and allows parallel work on mu
 
 Get ticket and check for investigation comments:
 ```bash
-python plugins/workflow/tools/linear.py get-ticket <ticket_id>
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py get-ticket <ticket_id>
 ```
 
 ## Step 2: Create Worktree
 
 Create an isolated worktree for the new fix branch:
 ```bash
-python plugins/workflow/tools/git.py create-worktree "fix/<identifier>-<slug>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py create-worktree "fix/<identifier>-<slug>"
 ```
 
 This returns the worktree path. **All subsequent work must be done in this directory.**
@@ -52,13 +52,13 @@ Use the **tester** agent to create a regression test.
 Use **reviewer** and **compliance** agents, then from the worktree directory:
 ```bash
 # Commit the fix
-python plugins/workflow/tools/git.py commit --message "fix: <description>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py commit --message "fix: <description>"
 
 # Push branch
-python plugins/workflow/tools/git.py push "fix/<identifier>-<slug>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py push "fix/<identifier>-<slug>"
 
 # Create PR
-python plugins/workflow/tools/git.py create-pr --title "fix: <title>" --body "Fixes <ticket_id>
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py create-pr --title "fix: <title>" --body "Fixes <ticket_id>
 
 ## Changes
 - <change 1>
@@ -68,22 +68,22 @@ python plugins/workflow/tools/git.py create-pr --title "fix: <title>" --body "Fi
 - Added regression test"
 
 # Update Linear ticket
-python plugins/workflow/tools/linear.py update-status <ticket_id> --status "In Review"
-python plugins/workflow/tools/linear.py add-comment <ticket_id> --body "PR created: <pr_url>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py update-status <ticket_id> --status "In Review"
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py add-comment <ticket_id> --body "PR created: <pr_url>"
 ```
 
 ## Step 6: Cleanup (Optional)
 
 After PR is merged:
 ```bash
-python plugins/workflow/tools/git.py remove-worktree "<worktree_path>"
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py remove-worktree "<worktree_path>"
 ```
 
 ---
 
 ## Tool Reference
 
-### Git (`plugins/workflow/tools/git.py`)
+### Git (`~/.claude/plugins/cache/*/workflow/*/tools/git.py`)
 
 | Command | Description |
 |---------|-------------|
@@ -93,7 +93,7 @@ python plugins/workflow/tools/git.py remove-worktree "<worktree_path>"
 | `push <branch>` | Push to remote |
 | `create-pr --title T --body B` | Create PR |
 
-### Linear (`plugins/workflow/tools/linear.py`)
+### Linear (`~/.claude/plugins/cache/*/workflow/*/tools/linear.py`)
 
 | Command | Description |
 |---------|-------------|

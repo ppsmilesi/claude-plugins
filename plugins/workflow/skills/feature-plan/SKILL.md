@@ -42,7 +42,7 @@ The architect will output TWO sections:
 Create the project with the full PROJECT_DESCRIPTION:
 
 ```bash
-python plugins/workflow/tools/linear.py create-project \
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py create-project \
   --team TEAM \
   --name "Feature: <feature name>" \
   --description "PROJECT_DESCRIPTION content here"
@@ -63,7 +63,7 @@ The project description MUST contain:
 For each task from the architect's TASKS output:
 
 ```bash
-python plugins/workflow/tools/linear.py create-ticket \
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py create-ticket \
   --team TEAM \
   --title "<task title>" \
   --description "<full task description>" \
@@ -79,6 +79,26 @@ Each ticket description MUST contain:
 - **Patterns to Follow**: References to existing code
 - **Dependencies**: Which other tickets must be done first
 - **Notes**: Implementation hints
+
+---
+
+## Step 4b: Set Blocking Relations
+
+For each ticket that has dependencies, set the "blocked by" relation in Linear so that dependency tiers are enforced:
+
+1. Build a mapping of **task title → ticket ID** from the tickets created in Step 4
+2. For each task in the architect's TASKS output that has non-empty `dependencies`:
+   - Look up each dependency title in the mapping to get the blocker ticket ID
+   - Call `block-ticket` to create the relation:
+
+```bash
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py block-ticket <ticket_id> --blocked-by <blocker_ticket_id>
+```
+
+This ensures that:
+- Tier 0 tickets have no blockers
+- Tier N tickets are blocked by their dependencies from tiers < N
+- Linear displays the correct dependency graph
 
 ---
 
@@ -133,11 +153,12 @@ Run `/workflow:feature-implement dark-mode-abc123` to start implementation
 
 ## Tool Reference
 
-### Linear (`plugins/workflow/tools/linear.py`)
+### Linear (`~/.claude/plugins/cache/*/workflow/*/tools/linear.py`)
 - `create-project --team TEAM --name NAME --description DESC`
 - `create-ticket --team TEAM --title TITLE --description DESC --project ID --state STATE`
+- `block-ticket <ticket_id> --blocked-by <blocker_ticket_id>` — Set blocking relation
 
-### Git (`plugins/workflow/tools/git.py`)
+### Git (`~/.claude/plugins/cache/*/workflow/*/tools/git.py`)
 - `repo-name` - Get repository name
 - `github-repo` - Get GitHub repo (owner/repo)
 
@@ -153,4 +174,5 @@ Before finishing, verify:
 - [ ] Each ticket has specific file paths
 - [ ] Each ticket references patterns to follow
 - [ ] Tickets are ordered by dependency
+- [ ] Blocking relations set in Linear for all dependencies
 - [ ] No documentation files created in codebase

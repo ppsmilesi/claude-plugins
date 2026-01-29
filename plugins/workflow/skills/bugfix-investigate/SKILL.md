@@ -13,7 +13,7 @@ Input: $ARGUMENTS (Linear ticket ID)
 
 Get ticket details:
 ```bash
-python plugins/workflow/tools/linear.py get-ticket <ticket_id>
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py get-ticket <ticket_id>
 ```
 
 Extract Sentry URL from description, then use Sentry MCP tools:
@@ -29,7 +29,7 @@ Use the **debugger** agent to analyze and create a fix plan:
 ## Step 3: Document in Linear
 Add investigation findings as a comment:
 ```bash
-python plugins/workflow/tools/linear.py add-comment <ticket_id> --body "## Root Cause Analysis
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py add-comment <ticket_id> --body "## Root Cause Analysis
 
 <findings>
 
@@ -45,9 +45,9 @@ python plugins/workflow/tools/linear.py add-comment <ticket_id> --body "## Root 
 
 ## Tool Reference
 
-### Linear (`plugins/workflow/tools/linear.py`)
+### Linear (`~/.claude/plugins/cache/*/workflow/*/tools/linear.py`)
 - `get-ticket <ticket_id>` - Get ticket details with description
 - `add-comment <ticket_id> --body "text"` - Add comment
 
-### Git (`plugins/workflow/tools/git.py`)
+### Git (`~/.claude/plugins/cache/*/workflow/*/tools/git.py`)
 - `github-repo` - Get GitHub repo for context

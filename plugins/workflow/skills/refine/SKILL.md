@@ -27,7 +27,7 @@ Use the **refiner** agent to analyze the user's rough idea:
 ### Step 2: Gather Context
 If in a repository, quickly check:
 ```bash
-python plugins/workflow/tools/git.py repo-name
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py repo-name
 ```
 And scan for relevant patterns in the codebase.
 
