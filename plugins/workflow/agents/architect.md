@@ -112,35 +112,34 @@ A JSON array of tasks. Each task becomes a Linear ticket:
 
 Each task description MUST include:
 
-```markdown
-## Summary
-<1-2 sentences: what this task accomplishes>
+### 🎯 Goals
 
-## Acceptance Criteria
+### 💬 Context
+
+### ✅ Acceptance Criteria
 - [ ] <Specific, testable criterion>
 - [ ] <Specific, testable criterion>
 
-## Implementation
+### 🛠️ Tactic
 
-### Files to Create
+#### Files to Create
 - `exact/path/to/file.ts` - <purpose>
 
-### Files to Modify
+#### Files to Modify
 - `exact/path/to/file.ts` - <what changes>
 
-### Patterns to Follow
+#### Patterns to Follow
 Reference `path/to/similar/file.ts` for:
 - <specific pattern to copy>
 
-### Tier
-<tier number> — <brief justification for tier placement>
+#### Database schemas
+If applicable
 
-### Dependencies
-- Requires: <other task title> (if any)
+### ❓Questions/Decisions
+Anything not clear or subject to interpretation
 
 ### Notes
-<Implementation hints, gotchas, edge cases>
-```
+Hints, gotchas, edge cases
 
 ---
 

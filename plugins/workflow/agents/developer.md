@@ -24,6 +24,7 @@ Focus on:
 - Type safety
 - Minimal, focused changes
 - Proper imports and module structure
+- Human understandable code
 
 IMPORTANT - Comments policy:
 - Write self-documenting code with clear naming

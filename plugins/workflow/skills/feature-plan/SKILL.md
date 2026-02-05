@@ -121,7 +121,7 @@ Present to the user:
 <brief overview>
 
 ### Next Step
-Run `/workflow:feature-implement <project_id>` to start implementation
+Run `/workflow:feature-implement <ticket_id>` for each ticket to implement
 ```
 
 ---
@@ -146,7 +146,7 @@ CSS custom properties based theming with React Context.
 Theme preference stored in localStorage with system preference fallback.
 
 ### Next Step
-Run `/workflow:feature-implement dark-mode-abc123` to start implementation
+Run `/workflow:feature-implement STAFF-101` to start implementing tickets
 ```
 
 ---

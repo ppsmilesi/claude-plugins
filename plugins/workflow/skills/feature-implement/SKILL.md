@@ -1,15 +1,15 @@
 ---
 name: feature-implement
-description: Implement a feature from a Linear project
+description: Implement a single Linear ticket
 disable-model-invocation: true
-argument-hint: "[project ID]"
+argument-hint: "[ticket ID or URL]"
 ---
 
-# Feature Implementation
+# Ticket Implementation
 
-Implement all tickets from a Linear project, using the architecture context stored in the project description.
+Implement a single Linear ticket, using architecture context from its parent project (if any).
 
-Input: $ARGUMENTS (Linear project ID, name, or URL)
+Input: $ARGUMENTS (Linear ticket ID, identifier, or URL)
 
 ## CRITICAL: Worktree Requirement
 
@@ -19,183 +19,180 @@ This prevents disrupting the user's working state and allows parallel work on mu
 
 ---
 
-## Step 1: Load Project Context
+## Step 1: Load Ticket Context
 
-### Get Project Details
+### Get Ticket Details
+```bash
+python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py get-ticket <ticket_id>
+```
+
+Extract from the ticket:
+- **Summary**: What this task accomplishes
+- **Acceptance Criteria**: Testable criteria to satisfy
+- **Files to Create/Modify**: Exact paths
+- **Patterns to Follow**: References to existing code
+- **Notes**: Implementation hints
+
+### Get Project Context (if ticket belongs to a project)
+
+If the ticket is part of a project, fetch the project for architecture context:
 ```bash
 python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py get-project <project_id>
 ```
 
-The project description contains critical context from `/workflow:feature-plan`:
-- **Original Requirements**: What the feature should do
-- **Architecture Overview**: How it should be built
-- **Tech Stack Context**: Framework, libraries, patterns
-- **Key Decisions**: Why certain choices were made
-- **Reference Files**: Existing code to follow as examples
-- **Out of Scope**: What NOT to implement
-
-**IMPORTANT**: Read and internalize this context before implementing any ticket.
-
-### Get All Tickets
-```bash
-python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py get-project-tickets <project_id>
-```
+**IMPORTANT**: Read and internalize all available context before implementing.
 
 ---
 
-## Step 2: Group Tickets by Tier
+## Step 2: Create Worktree
 
-Parse the ticket descriptions to extract tier information (from the `### Tier` section in each ticket's description). Group tickets into tiers:
+Create an isolated worktree for this ticket:
 
-- **Tier 0**: Tickets with no dependencies / no blockers
-- **Tier N**: Tickets whose blockers are all in tiers < N
+```bash
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py create-worktree "feature/<ticket-identifier>"
+```
 
-Build a mapping: `tier_number → [list of tickets]`
+### Set Up Environment
 
-Identify the total number of tiers and the tickets in each.
+Get the worktree ready to run the project. Inspect the repo to understand what's needed (e.g. check for `package.json`, `Makefile`, `docker-compose.yml`, `.tool-versions`, etc.), then:
+
+1. **Copy local config/env files** — Copy any gitignored config files (`.env`, `.*.local.*`, service account keys, etc.) from the main repo into the worktree. **Do NOT read the contents** of these files — just copy them.
+2. **Install dependencies** — Run the appropriate install command (`mise install`, `npm install`, `uv sync`, `pip install`, `bundle install`, etc.)
+3. **Run setup scripts** — If the project has a setup script or `Makefile` target (e.g. `make setup`, `bin/setup`), run it.
+4. **Verify** — Confirm the project builds/compiles before moving on.
 
 ---
 
-## Step 3: Process Each Tier
+## Step 3: Implement
 
-Process tiers sequentially (0, 1, 2...). Within each tier, process all tickets **in parallel**.
-
-### 3a. Create Worktrees in Parallel
-
-For each ticket in the current tier, create an isolated worktree:
-
-```bash
-# Tier 0: branch from origin/main
-python ~/.claude/plugins/cache/*/workflow/*/tools/git.py create-worktree "feature/<project-slug>/tier-<N>/<ticket-identifier>"
-
-# Tier N (N>0): branch from the previous tier's integration branch
-python ~/.claude/plugins/cache/*/workflow/*/tools/git.py create-worktree "feature/<project-slug>/tier-<N>/<ticket-identifier>" --start-point "feature/<project-slug>/tier-<N-1>"
-```
-
-### 3b. Launch Sub-Agents in Parallel
-
-Use the **Task tool** to launch one sub-agent per ticket **in a single message** (parallel execution). Each agent receives:
-
-- **Worktree path**: The isolated directory to work in
-- **Ticket context**: Full ticket details (summary, acceptance criteria, files, patterns)
-- **Project context**: Architecture overview, tech stack, reference files from the project description
-
-Each sub-agent independently executes:
+Work inside the worktree directory. Execute these phases sequentially using **sub-agents via the Task tool**:
 
 1. **Plan** — Use the **planner** agent: read reference files, create implementation plan
 2. **Implement** — Use the **developer** agent: create/modify files, follow patterns
 3. **Test** — Use the **tester** agent: write tests, run them
 4. **Review** — Use the **reviewer** and **compliance** agents: check quality
-5. **Commit** — Commit changes with message:
-   ```
-   feat(<scope>): <ticket title>
 
-   <summary of changes>
+Each sub-agent receives:
+- **Worktree path**: The isolated directory to work in
+- **Ticket context**: Full ticket details (summary, acceptance criteria, files, patterns)
+- **Project context**: Architecture overview, tech stack, reference files (if available)
 
-   Ticket: <ticket_identifier>
-   ```
-6. **Update Linear** — Add implementation comment to the ticket
+---
 
-### 3c. Create Tier Integration Branch
+## Step 4: Commit
 
-After all sub-agents in the tier complete:
+Commit changes with a descriptive message:
+```
+feat(<scope>): <ticket title>
 
-1. Create the tier integration branch:
-   ```bash
-   # Tier 0: from origin/main
-   python ~/.claude/plugins/cache/*/workflow/*/tools/git.py create-worktree "feature/<project-slug>/tier-<N>"
+<summary of changes>
 
-   # Tier N>0: from previous tier
-   python ~/.claude/plugins/cache/*/workflow/*/tools/git.py create-worktree "feature/<project-slug>/tier-<N>" --start-point "feature/<project-slug>/tier-<N-1>"
-   ```
+Ticket: <ticket_identifier>
+```
 
-2. Merge each ticket worktree into the integration branch:
-   ```bash
-   cd <tier_integration_worktree_path>
-   git merge "feature/<project-slug>/tier-<N>/<ticket-identifier>" --no-edit
-   ```
-   Repeat for each ticket in the tier.
+```bash
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py commit --message "feat(<scope>): <title>
 
-3. Push the integration branch:
-   ```bash
-   python ~/.claude/plugins/cache/*/workflow/*/tools/git.py push "feature/<project-slug>/tier-<N>"
-   ```
+<summary>
 
-### 3d. Create Stacked PR for the Tier
+Ticket: <ticket_identifier>"
+```
 
-Create a PR for the tier's integration branch targeting the previous tier (or `main` for tier 0):
+Push the branch:
+```bash
+python ~/.claude/plugins/cache/*/workflow/*/tools/git.py push "feature/<ticket-identifier>"
+```
+
+---
+
+## Step 5: Create PR
+
+### Determine Base Branch
+
+If this ticket was **blocked by** another ticket, the PR targets that blocker's branch (stacked PR). Otherwise, target `main`.
+
+- **Has blocker**: base = `feature/<blocker-ticket-identifier>`
+- **No blocker**: base = `main`
+
+### Merge Base Into Current Branch
+
+Before creating the PR, merge the base branch into the current branch to ensure it includes all upstream changes:
+
+```bash
+cd <worktree_path>
+git merge <base_branch> --no-edit
+```
+
+If there are merge conflicts, resolve them sensibly — prefer the current branch's changes for new code, and the base branch's changes for shared infrastructure. After resolving, commit the merge.
+
+### Create the PR
 
 ```bash
 python ~/.claude/plugins/cache/*/workflow/*/tools/git.py create-pr \
-  --title "feat(<scope>): <feature name> - Tier <N>" \
+  --title "feat(<scope>): <ticket title>" \
   --body "## Summary
-<architecture overview from project>
-
-## Tier <N> Tickets
-- <TICKET-1>: <title>
-- <TICKET-2>: <title>
+<what this PR does and why>
 
 ## Changes
-<summary of changes in this tier>
+<summary of changes>
 
-## Stacked PR
-- Base: <target branch (main or previous tier branch)>
-- This is tier <N> of <total tiers>
+## Acceptance Criteria
+- [ ] <criteria from ticket>
 
 ## Testing
 - [ ] Unit tests added
 - [ ] Manual testing completed
 
-## Linear Project
-<project_url>" \
-  --base "<target_branch>"
+## Linear Ticket
+<ticket_url>" \
+  --base "<base_branch>"
 ```
 
-**Stacked PR targeting:**
-- Tier 0 PR → targets `main`
-- Tier 1 PR → targets `feature/<project-slug>/tier-0`
-- Tier N PR → targets `feature/<project-slug>/tier-<N-1>`
+### Trigger Review
 
-### 3e. Update Linear Tickets
+Add a comment on the PR to trigger an automated review:
 
-For each ticket in the tier:
+```bash
+gh pr comment <pr_number> --body "@claude"
+```
+
+---
+
+## Step 6: Update Linear
+
 ```bash
 python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py update-status <ticket_id> --status "In Review"
 python ~/.claude/plugins/cache/*/workflow/*/tools/linear.py add-comment <ticket_id> --body "PR created: <pr_url>"
 ```
 
-Then proceed to the next tier.
-
 ---
 
-## Step 4: Cleanup
+## Step 7: Cleanup
 
-After all tiers are processed, remove worktrees:
+Remove the worktree:
 ```bash
 python ~/.claude/plugins/cache/*/workflow/*/tools/git.py remove-worktree "<worktree_path>"
 ```
 
 ---
 
-## Step 5: Summary
+## Step 8: Summary
 
 Present to the user:
 ```
 ## Implementation Complete
 
-### Stacked PRs Created
-- Tier 0: <pr_url_0> (→ main)
-- Tier 1: <pr_url_1> (→ tier-0)
-- ...
+### PR Created
+<pr_url> (→ main)
 
-### Tickets Implemented
-- <TICKET-1>: <title> (Tier 0)
-- <TICKET-2>: <title> (Tier 0)
-- <TICKET-3>: <title> (Tier 1)
-- ...
+### Ticket
+<ticket_identifier>: <title>
+
+### Changes
+<brief summary of what was implemented>
 
 ### Next Steps
-1. Review PRs bottom-up: merge Tier 0 first, then Tier 1, etc.
+1. Review the PR
 2. Wait for CI to pass: `/workflow:ci-status`
 3. If CI fails: `/workflow:ci-fix`
 ```
@@ -224,7 +221,6 @@ Present to the user:
 | `get-ticket <id>` | Get ticket details |
 | `update-status <id> --status STATUS` | Update status |
 | `add-comment <id> --body "text"` | Add comment |
-| `block-ticket <id> --blocked-by <id>` | Set blocking relation |
 
 ### GitHub (`~/.claude/plugins/cache/*/workflow/*/tools/github.py`)
 
@@ -237,9 +233,9 @@ Present to the user:
 ## Quality Checklist
 
 Before creating PR:
-- [ ] All acceptance criteria met for each ticket
+- [ ] All acceptance criteria met
 - [ ] Tests written for new functionality
 - [ ] Code follows patterns from reference files
 - [ ] No markdown files created in codebase
-- [ ] All tickets updated with implementation notes
-- [ ] Commit messages reference ticket identifiers
+- [ ] Ticket updated with implementation notes
+- [ ] Commit message references ticket identifier
